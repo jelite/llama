@@ -20,9 +20,9 @@ class Event_record():
         return self.start.elapsed_time(self.end)
 
 def splited_linear(x, m, split_size):
-    # Convert weights to half precision
-    weights = m.weight.t().half()
-    x = x.half()  # Convert input to half precision
+    # Convert weights to bfloat16 precision
+    weights = m.weight.t().bfloat16()
+    x = x.bfloat16()  # Convert input to bfloat16 precision
     
     x_col_size = x.size()[2]
     weights_row_size = weights.size()[0]
@@ -38,15 +38,15 @@ def splited_linear(x, m, split_size):
         weights_sliced = weights[weights_row_size*(split_idx+1)//split_size:weights_row_size*(split_idx+2)//split_size,:]
         out.addmm_(x_sliced, weights_sliced)
 
-    return out  # Added return statement
+    return out
 
-# Update test inputs to use half precision
-x = torch.randn([1, 2048, 3584]).half().cuda()  # Changed to half()
+# Update test inputs to use bfloat16 precision
+x = torch.randn([1, 2048, 3584]).bfloat16().cuda()
 m = torch.nn.Linear(in_features=3584, out_features=18944, bias=False).cuda()
-m.weight.data = m.weight.data.half()  # Convert model weights to half precision
+m.weight.data = m.weight.data.bfloat16()  # Convert model weights to bfloat16 precision
 
-warmup_size = 1
-profile_size = 0
+warmup_size = 0
+profile_size = 1
 
 record = Event_record()
 # for _ in range(warmup_size):
@@ -57,7 +57,7 @@ record = Event_record()
 # print(f"Time taken: {record.get_time()/profile_size} ms")
 
 split_sizes = [1,2,4,8,16,32,64,128,256]
-# split_sizes = [32]
+# split_sizes = [1]
 for split_size in split_sizes:
     for _ in range(warmup_size):
         out = splited_linear(x, m, split_size)
