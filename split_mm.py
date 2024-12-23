@@ -73,8 +73,12 @@ elif data_type == "full":
     x = torch.randn([1, 2048, 3584]).float().cuda()
     m = torch.nn.Linear(in_features=3584, out_features=18944, bias=False).cuda()
 
-warmup_size = 0
-profile_size = 1
+if is_profile == True:
+    warmup_size = 0
+    profile_size = 1
+else:
+    warmup_size = 10
+    profile_size = 100
 
 record = Event_record()
 # for _ in range(warmup_size):
